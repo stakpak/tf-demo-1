@@ -1,0 +1,30 @@
+name: Terraform Security Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform-security-review:
+    name: Security Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Terraform Security Analysis
+        uses: stakpak-action@v1.0.1
+        with:
+          api_key: ${{ secrets.STAKPAK_API_KEY }}
+          prompt: "Review this Terraform code for security vulnerabilities and best practices violations"
+          max_steps: 10
+          verbose: true
+          workdir: .
