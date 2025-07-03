@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Terraform Security Analysis
-        uses: stakpak/stakpak-action@v1.0.2
+        uses: stakpak/stakpak-action@v1.0.3
         with:
           api_key: ${{ secrets.STAKPAK_API_KEY }}
           prompt: "Review this Terraform code for security vulnerabilities and best practices violations, then write a summary of the findings and provide a list of recommendations for fixing the issues."
