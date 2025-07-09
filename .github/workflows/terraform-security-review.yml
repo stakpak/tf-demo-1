@@ -24,7 +24,9 @@ jobs:
         uses: stakpak/stakpak-action@v1.0.7
         with:
           api_key: ${{ secrets.STAKPAK_API_KEY }}
-          prompt: "Review this Terraform code for security vulnerabilities and best practices violations, then write a summary of the findings and provide a list of recommendations for fixing the issues."
+          prompt: |
+            Review this Terraform code for security vulnerabilities and best practices violations,
+            then write a summary of the findings and provide a list of recommendations for fixing the issues.
           max_steps: 10
           verbose: true
           workdir: .
