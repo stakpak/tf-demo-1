@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Terraform Security Analysis
-        uses: stakpak/stakpak-action@v1.0.9
+        uses: stakpak/stakpak-action@v1.0.10
         with:
           api_key: ${{ secrets.STAKPAK_API_KEY }}
           prompt: |
