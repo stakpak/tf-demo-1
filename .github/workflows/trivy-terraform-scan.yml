@@ -53,6 +53,8 @@ jobs:
 
       - name: Analyze and Prioritize Trivy Findings
         uses: stakpak/stakpak-action@v1.0.7
+        env:
+          STAKPAK_API_KEY: ${{ secrets.STAKPAK_API_KEY }}
         with:
           api_key: ${{ secrets.STAKPAK_API_KEY }}
           prompt: |
