@@ -95,7 +95,7 @@ jobs:
             - "Data analytics platform processing customer behavioral data for ML models"
 
             Focus on actionable insights rather than just listing vulnerabilities. Consider the actual attack vectors and business risk, not just theoretical security issues.
-          max_steps: 15
+          max_steps: 10
           verbose: true
           workdir: .
 
