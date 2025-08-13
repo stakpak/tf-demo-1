@@ -1,0 +1,137 @@
+name: Trivy Terraform Security Scan
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '**.hcl'
+  push:
+    branches: [main, master]
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '**.hcl'
+  workflow_dispatch:
+    inputs:
+      business_context:
+        description: 'Business context to help prioritize findings (e.g., "This is a production payment processing system handling PCI data" or "Development environment for internal tools")'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  trivy-terraform-scan:
+    name: Trivy Terraform Scan & Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy Terraform scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-results.json'
+          exit-code: '0'  # Don't fail the job on findings
+
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.json
+
+      - name: Analyze and Prioritize Trivy Findings
+        uses: stakpak/stakpak-action@v1.0.7
+        with:
+          api_key: ${{ secrets.STAKPAK_API_KEY }}
+          prompt: |
+            You are a security expert analyzing Terraform infrastructure code. I have Trivy scan results that need to be prioritized and contextualized.
+
+            **Business Context:**
+            ${{ github.event.inputs.business_context || 'No specific business context provided - treat as general infrastructure.' }}
+
+            **Your Task:**
+            1. Review the Trivy scan results in trivy-results.json
+            2. Analyze each finding for:
+               - Actual security risk vs false positive
+               - Business impact based on the context provided
+               - Exploitability in real-world scenarios
+               - Compliance implications (SOC2, PCI, GDPR, etc.)
+            
+            3. Create a prioritized report with:
+               - **CRITICAL**: Immediate action required (exploitable vulnerabilities, data exposure risks)
+               - **HIGH**: Should be fixed in current sprint (security misconfigurations, weak policies)
+               - **MEDIUM**: Plan for next sprint (hardening opportunities, best practices)
+               - **LOW**: Technical debt (minor improvements, style issues)
+               - **INFO**: Acknowledged but acceptable risk
+
+            4. For each priority level, provide:
+               - Clear explanation of the risk
+               - Business impact assessment
+               - Specific remediation steps
+               - Estimated effort to fix
+
+            5. Include a summary section with:
+               - Overall security posture assessment
+               - Top 3 recommendations
+               - Any findings that can be safely ignored and why
+
+            **Example Business Context Prompts:**
+            - "This is a production payment processing system handling PCI data with strict compliance requirements"
+            - "Development environment for internal tools, low external exposure but contains sensitive employee data"
+            - "Public-facing web application serving 100k+ users with user authentication and personal data"
+            - "Internal CI/CD infrastructure with access to production deployment keys"
+            - "Data analytics platform processing customer behavioral data for ML models"
+
+            Focus on actionable insights rather than just listing vulnerabilities. Consider the actual attack vectors and business risk, not just theoretical security issues.
+          max_steps: 15
+          verbose: true
+          workdir: .
+
+      - name: Comment PR with Analysis
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Try to read the stakpak output (it should be in the workspace)
+            let analysisContent = '';
+            try {
+              // The stakpak action should have created output files
+              const files = fs.readdirSync('.');
+              const outputFile = files.find(f => f.includes('stakpak') || f.includes('analysis'));
+              if (outputFile) {
+                analysisContent = fs.readFileSync(outputFile, 'utf8');
+              }
+            } catch (error) {
+              console.log('Could not find stakpak analysis output');
+            }
+
+            const comment = `## 🔍 Trivy Terraform Security Analysis
+
+            ${analysisContent || 'Analysis completed - check the job logs for detailed findings.'}
+
+            ---
+            💡 **Tip**: For better prioritization, provide business context when running this workflow manually:
+            - Go to Actions → Trivy Terraform Security Scan → Run workflow
+            - Add context like: "Production payment system with PCI compliance requirements"
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
