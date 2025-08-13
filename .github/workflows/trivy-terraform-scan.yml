@@ -52,7 +52,7 @@ jobs:
           path: trivy-results.json
 
       - name: Analyze and Prioritize Trivy Findings
-        uses: stakpak/agent@v1
+        uses: stakpak/stakpak-action@v1.0.7
         with:
           api_key: ${{ secrets.STAKPAK_API_KEY }}
           prompt: |
