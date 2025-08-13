@@ -40,56 +40,19 @@ jobs:
           output: "trivy-results.json"
           exit-code: "0" # Don't fail the job on findings
 
-      - name: Upload Trivy scan results
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-results
-          path: trivy-results.json
+      # - name: Upload Trivy scan results
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: trivy-results
+      #     path: trivy-results.json
 
       - name: Analyze and Prioritize Trivy Findings
         uses: stakpak/stakpak-action@v1.0.7
         with:
           api_key: ${{ secrets.STAKPAK_API_KEY }}
           prompt: |
-            I have Trivy scan results that need to be prioritized and contextualized.
-
-            **Business Context:**
-            We're a PCI compliant payment processing company.
-
-            **Your Task:**
-            1. Review the Trivy scan results in trivy-results.json
-            2. Analyze each finding for:
-               - Actual security risk vs false positive
-               - Business impact based on the context provided
-               - Exploitability in real-world scenarios
-               - Compliance implications (SOC2, PCI, GDPR, etc.)
-
-            3. Create a prioritized report with:
-               - **CRITICAL**: Immediate action required (exploitable vulnerabilities, data exposure risks)
-               - **HIGH**: Should be fixed in current sprint (security misconfigurations, weak policies)
-               - **MEDIUM**: Plan for next sprint (hardening opportunities, best practices)
-               - **LOW**: Technical debt (minor improvements, style issues)
-               - **INFO**: Acknowledged but acceptable risk
-
-            4. For each priority level, provide:
-               - Clear explanation of the risk
-               - Business impact assessment
-               - Specific remediation steps
-               - Estimated effort to fix
-
-            5. Include a summary section with:
-               - Overall security posture assessment
-               - Top 3 recommendations
-               - Any findings that can be safely ignored and why
-
-            **Example Business Context Prompts:**
-            - "This is a production payment processing system handling PCI data with strict compliance requirements"
-            - "Development environment for internal tools, low external exposure but contains sensitive employee data"
-            - "Public-facing web application serving 100k+ users with user authentication and personal data"
-            - "Internal CI/CD infrastructure with access to production deployment keys"
-            - "Data analytics platform processing customer behavioral data for ML models"
-
-            Focus on actionable insights rather than just listing vulnerabilities. Consider the actual attack vectors and business risk, not just theoretical security issues.
+            Review this Terraform code for security vulnerabilities and best practices violations,
+            then write a summary of the findings and provide a list of recommendations for fixing the issues.
           max_steps: 10
           verbose: true
           workdir: .
