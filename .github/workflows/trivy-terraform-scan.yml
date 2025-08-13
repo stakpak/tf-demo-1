@@ -4,21 +4,16 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - '**.tf'
-      - '**.tfvars'
-      - '**.hcl'
+      - "**.tf"
+      - "**.tfvars"
+      - "**.hcl"
   push:
     branches: [main, master]
     paths:
-      - '**.tf'
-      - '**.tfvars'
-      - '**.hcl'
+      - "**.tf"
+      - "**.tfvars"
+      - "**.hcl"
   workflow_dispatch:
-    inputs:
-      business_context:
-        description: 'Business context to help prioritize findings (e.g., "This is a production payment processing system handling PCI data" or "Development environment for internal tools")'
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -39,11 +34,11 @@ jobs:
       - name: Run Trivy Terraform scan
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'config'
-          scan-ref: '.'
-          format: 'json'
-          output: 'trivy-results.json'
-          exit-code: '0'  # Don't fail the job on findings
+          scan-type: "config"
+          scan-ref: "."
+          format: "json"
+          output: "trivy-results.json"
+          exit-code: "0" # Don't fail the job on findings
 
       - name: Upload Trivy scan results
         uses: actions/upload-artifact@v4
@@ -56,10 +51,10 @@ jobs:
         with:
           api_key: ${{ secrets.STAKPAK_API_KEY }}
           prompt: |
-            You are a security expert analyzing Terraform infrastructure code. I have Trivy scan results that need to be prioritized and contextualized.
+            I have Trivy scan results that need to be prioritized and contextualized.
 
             **Business Context:**
-            ${{ github.event.inputs.business_context || 'No specific business context provided - treat as general infrastructure.' }}
+            We're a PCI compliant payment processing company.
 
             **Your Task:**
             1. Review the Trivy scan results in trivy-results.json
@@ -68,7 +63,7 @@ jobs:
                - Business impact based on the context provided
                - Exploitability in real-world scenarios
                - Compliance implications (SOC2, PCI, GDPR, etc.)
-            
+
             3. Create a prioritized report with:
                - **CRITICAL**: Immediate action required (exploitable vulnerabilities, data exposure risks)
                - **HIGH**: Should be fixed in current sprint (security misconfigurations, weak policies)
@@ -99,39 +94,39 @@ jobs:
           verbose: true
           workdir: .
 
-      - name: Comment PR with Analysis
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            
-            // Try to read the stakpak output (it should be in the workspace)
-            let analysisContent = '';
-            try {
-              // The stakpak action should have created output files
-              const files = fs.readdirSync('.');
-              const outputFile = files.find(f => f.includes('stakpak') || f.includes('analysis'));
-              if (outputFile) {
-                analysisContent = fs.readFileSync(outputFile, 'utf8');
-              }
-            } catch (error) {
-              console.log('Could not find stakpak analysis output');
-            }
+      # - name: Comment PR with Analysis
+      #   if: github.event_name == 'pull_request'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const fs = require('fs');
 
-            const comment = `## 🔍 Trivy Terraform Security Analysis
+      #       // Try to read the stakpak output (it should be in the workspace)
+      #       let analysisContent = '';
+      #       try {
+      #         // The stakpak action should have created output files
+      #         const files = fs.readdirSync('.');
+      #         const outputFile = files.find(f => f.includes('stakpak') || f.includes('analysis'));
+      #         if (outputFile) {
+      #           analysisContent = fs.readFileSync(outputFile, 'utf8');
+      #         }
+      #       } catch (error) {
+      #         console.log('Could not find stakpak analysis output');
+      #       }
 
-            ${analysisContent || 'Analysis completed - check the job logs for detailed findings.'}
+      #       const comment = `## 🔍 Trivy Terraform Security Analysis
 
-            ---
-            💡 **Tip**: For better prioritization, provide business context when running this workflow manually:
-            - Go to Actions → Trivy Terraform Security Scan → Run workflow
-            - Add context like: "Production payment system with PCI compliance requirements"
-            `;
+      #       ${analysisContent || 'Analysis completed - check the job logs for detailed findings.'}
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+      #       ---
+      #       💡 **Tip**: For better prioritization, provide business context when running this workflow manually:
+      #       - Go to Actions → Trivy Terraform Security Scan → Run workflow
+      #       - Add context like: "Production payment system with PCI compliance requirements"
+      #       `;
+
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: comment
+      #       });
